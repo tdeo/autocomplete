@@ -11,5 +11,36 @@
 // about supported directives.
 //
 //= require rails-ujs
+//= require jquery
+//= require jquery-ui
+//= require jquery-ui/widgets/autocomplete
 //= require turbolinks
 //= require_tree .
+
+function display(city) {
+  $.ajax({
+    method: 'GET',
+    url: '/city/' + city.idx,
+    dataType: 'html',
+  }).done(function(response) {
+    $('#city_info').html(response);
+  })
+
+}
+
+$(document).on('ready turbolinks:load', function() {
+  $('#search').autocomplete({
+    autoFocus: true,
+    source: '/search',
+    minLength: 3,
+    delay: 250,
+    focus: function(event, ui) {
+      return false;
+    },
+    select: function(event, ui) {
+      $('#search').val(ui.item.label);
+      display(ui.item);
+      return false;
+    }
+  });
+});

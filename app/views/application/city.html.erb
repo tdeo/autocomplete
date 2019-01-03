@@ -1,0 +1,24 @@
+<div class="col-xs-12 col-md-4">
+  <h2><%= @city.real_name %></h2>
+
+  <% if @city.zipcodes.size == 1 %>
+    <div>Code postal : <%= @city.zipcodes[0] %></div>
+  <% else %>
+    <div>
+      Codes postaux :
+      <ul>
+        <% @city.zipcodes.each do |zip| %>
+          <li><%= zip %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    Population (2010) : <%= number_with_delimiter(@city.params[:pop_2010]) %>
+  </div>
+</div>
+
+<div class="col-xs-12 col-md-8">
+  <iframe width="100%" height="600px" frameborder="0" style="position: relative; border: 0; width: 100%; height: 50vh;" src="https://www.google.com/maps/embed/v1/view?center=<%= @city.params[:lat_deg] %>%2C<%= @city.params[:long_deg] %>&zoom=13&key=AIzaSyAzvgVkGFZNr19zI1nsYo0teQqcgBAIfoU" allowfullscreen></iframe>
+</div>

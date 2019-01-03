@@ -29,5 +29,8 @@ module Reecall
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    config.i18n.default_locale = :fr
+    config.autoload_paths += ["#{config.root}/lib"]
   end
 end
