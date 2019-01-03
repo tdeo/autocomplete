@@ -1,14 +1,10 @@
 require 'csv'
 
 class City
-  attr_reader :soundex, :metaphone, :real_name, :name, :simple_name, :idx, :label, :masked_zip, :zipcodes, :params
+  attr_reader :real_name, :idx, :masked_zip, :zipcodes, :params
 
   def initialize(params)
-    @name = params[:name]
-    @simple_name = params[:simple_name]
     @real_name = params[:real_name]
-    @soundex = Utils.soundex(@real_name)
-    @metaphone = Utils.metaphone(@real_name)
     @zipcodes = params[:zipcode].split('-')
     @masked_zip = self.class.masked_zip(@zipcodes)
     @params = params
@@ -29,10 +25,19 @@ class City
     mask
   end
 
-  def self.preload
-    return if @cities.present?
+  def self.all
+    @cities
+  end
 
-    @metaphones = []
+  def self.big_cities
+    @big_cities ||= @cities.sort_by { |c| -c.params[:pop_2010] }.first(200)
+  end
+
+
+  def self.preload
+    return if @cities.is_a?(Array) && @cities.size > 30_000
+    puts 'Preloading'
+
     @soundexes = []
 
     @cities = CSV.foreach(File.open(Rails.root.join('config', 'cities.csv'))).each_with_index.map do |row, i|
@@ -40,9 +45,9 @@ class City
         idx: i,
         _id: row[0],
         department: row[1],
-        slug: row[2],
-        name: row[3],
-        simple_name: row[4],
+        # slug: row[2],
+        # name: row[3],
+        # simple_name: row[4],
         real_name: row[5],
         # soundex: row[6] || '',
         # metaphone: row[7] || '',
@@ -66,41 +71,55 @@ class City
         max_alt: row[26].to_f,
       )
 
-      @metaphones << [c.metaphone, i]
-      @soundexes << [c.soundex, i]
+      Utils.tokens(c.real_name).each do |token|
+        @soundexes << [Utils.soundex(token), c.idx]
+      end
 
       c
+    rescue => e
+      pp e
+      pp c
     end
 
-    @metaphones.sort!
     @soundexes.sort!
+    puts 'Finish preloading'
   end
 
-  def self.search(term)
-    puts Utils.soundex(term)
-    (by_soundex_prefix(Utils.soundex(term)) + by_metaphone_prefix(Utils.metaphone(term))).uniq
+  def score(query)
+    name_tokens = Utils.tokens(real_name)
+    Utils.tokens(query).map do |token|
+      name_tokens.map { |name_token| Utils.levenshtein(token, name_token) }.min
+    end.sum
   end
 
-  def self.by_soundex_prefix(soundex)
-    by_prefix(soundex, @soundexes)
+  def self.search(query)
+    (big_cities + by_soundex(query)).uniq
   end
 
-  def self.by_metaphone_prefix(metaphone)
-    return []
-    by_prefix(metaphone, @metaphones)
+  def self.by_soundex(query)
+    matches = Hash.new { |h, k| h[k] = 0 }
+
+    Utils.tokens(query).each do |token|
+      having_soundex_prefix(Utils.soundex(token)) do |idx|
+        matches[idx] += 1
+      end
+    end
+
+    matches.each_key.map { |k| self[k] }
   end
 
-  def self.by_prefix(prefix, sorted_array)
-    idx = sorted_array.bsearch_index { |el| el[0] >= prefix }
+  def self.having_soundex_prefix(prefix)
+    idx = @soundexes.bsearch_index { |el| el[0] >= prefix }
     return [] if idx.nil?
 
-    results = []
-    while idx < sorted_array.size && sorted_array[idx][0].start_with?(prefix)
-      results << @cities[sorted_array[idx][1]]
-      idx += 1
+    while idx < @soundexes.size
+      if @soundexes[idx][0].start_with?(prefix)
+        yield @soundexes[idx][1]
+        idx += 1
+      else
+        break
+      end
     end
-
-    results
   end
 
   def self.[](i)
