@@ -1,6 +1,32 @@
 <div class="col-xs-12 col-md-4">
   <h2><%= @city.real_name %></h2>
 
+  <br />
+
+  <table class="table table-condensed">
+    <thead>
+      <tr>
+        <td class="text-center" colspan="2"><strong>Démographie</strong></td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Superficie</td>
+        <td><%= number_with_precision(@city.params[:area], delimiter: ' ', precision: 2, strip_insignificant_zeros: true) %>&nbsp;km<sup>2</sup></td>
+      </tr>
+      <tr>
+        <td>Population (2010)</td>
+        <td><%= number_with_precision(@city.params[:pop_2010], delimiter: ' ', precision: 0, strip_insignificant_zeros: true) %>&nbsp;hab</td>
+      </tr>
+      <tr>
+        <td>Densité (2010)</td>
+        <td><%= number_with_precision(@city.params[:density_2010], delimiter: ' ', precision: 2, strip_insignificant_zeros: true) %>&nbsp;hab/km<sup>2</sup></td>
+      </tr>
+      </tbody>
+  </table>
+
+  <br />
+
   <% if @city.zipcodes.size == 1 %>
     <div>Code postal : <%= @city.zipcodes[0] %></div>
   <% else %>
@@ -13,10 +39,6 @@
       </ul>
     </div>
   <% end %>
-
-  <div>
-    Population (2010) : <%= number_with_delimiter(@city.params[:pop_2010]) %>
-  </div>
 </div>
 
 <div class="col-xs-12 col-md-8">

@@ -22,6 +22,8 @@ class Utils
     "œ" => 'oe',
   }
 
+  TOKENS_BLACKLIST = %w(SUR LA LE DE LES EN D DU ET L DES AUX AU)
+
   TR = ['', '']
   REPLACE.each do |k, v|
     TR[0] << k.upcase
@@ -37,7 +39,7 @@ class Utils
 
   def self.tokens(str)
     str = str.upcase.tr(*TR)
-    str.split(/[^A-Z]+/)
+    str.split(/[^A-Z]+/) - TOKENS_BLACKLIST
   end
 
   def self.tokens_freq

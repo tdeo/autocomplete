@@ -1,10 +1,37 @@
 class ApplicationController < ActionController::Base
   def search
-    results = City.search(params[:term])
+    query = Utils.ascii(params[:term])
+    soundex = Utils.soundex(query)
 
-    results.sort_by! { |r| r.score(params[:term]) }
+    results = City.search(query).sort_by! { |r| r.score(query) }
 
-    render json: results.first(15).map { |r| r.as_json.merge(label: "#{r.real_name} (#{r.masked_zip})" ) }
+    idx = results.bsearch_index { |r| r.score(query) >= 1000 }
+
+    prefixes = []
+    contains = []
+    sounds = []
+    others = []
+
+    results[0...idx].each do |r|
+      ascii_name = Utils.ascii(r.real_name)
+
+      if ascii_name.start_with?(query)
+        prefixes << r
+      elsif ascii_name.include?(query)
+        contains << r
+      elsif Utils.soundex(ascii_name).start_with?(soundex)
+        sounds << r
+      else
+        others << r
+      end
+    end
+
+    to_display = prefixes + sounds.first(5)
+    to_display += contains.first(to_display.size < 10 ? 10 : 5)
+    to_display += others.first(to_display.size < 10 ? 5 : 2)
+
+
+    render json: to_display.first(25).map { |r| { label: "#{r.real_name} (#{r.masked_zip})", id: r.id } }
   end
 
   def city

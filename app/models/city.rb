@@ -1,14 +1,14 @@
 require 'csv'
 
 class City
-  attr_reader :real_name, :idx, :masked_zip, :zipcodes, :params
+  attr_reader :real_name, :id, :masked_zip, :zipcodes, :params
 
   def initialize(params)
     @real_name = params[:real_name]
     @zipcodes = params[:zipcode].split('-')
     @masked_zip = self.class.masked_zip(@zipcodes)
     @params = params
-    @idx = params[:idx]
+    @id = params[:idx]
   end
 
   def self.masked_zip(zipcodes)
@@ -72,13 +72,10 @@ class City
       )
 
       Utils.tokens(c.real_name).each do |token|
-        @soundexes << [Utils.soundex(token), c.idx]
+        @soundexes << [Utils.soundex(token), c.id]
       end
 
       c
-    rescue => e
-      pp e
-      pp c
     end
 
     @soundexes.sort!
@@ -86,10 +83,17 @@ class City
   end
 
   def score(query)
+    ascii_name = Utils.ascii(real_name)
+    return 1000 if Utils.levenshtein(query, ascii_name) >= (ascii_name.size + query.size) / 2
+    return 1000 if Utils.levenshtein(query, ascii_name) - (ascii_name.size - query.size).abs >= [ascii_name.size, query.size].min / 2
+
     name_tokens = Utils.tokens(real_name)
-    Utils.tokens(query).map do |token|
+
+    s = Utils.tokens(query).map do |token|
       name_tokens.map { |name_token| Utils.levenshtein(token, name_token) }.min
     end.sum
+
+    s -= Math.log10(params[:pop_2010])
   end
 
   def self.search(query)

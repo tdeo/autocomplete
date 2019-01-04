@@ -20,7 +20,7 @@
 function display(city) {
   $.ajax({
     method: 'GET',
-    url: '/city/' + city.idx,
+    url: '/city/' + city.id,
     dataType: 'html',
   }).done(function(response) {
     $('#city_info').html(response);
