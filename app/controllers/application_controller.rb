@@ -27,8 +27,10 @@ class ApplicationController < ActionController::Base
     end
 
     to_display = prefixes.first(3) + contains.first(3)
-    to_display += sounds.first(to_display.size < 5 ? 5 : 3)
-    to_display += others.first(to_display.size < 5 ? 5 : 2)
+
+    few_results = to_display.size < 3
+    to_display += sounds.first(few_results ? 3 : 2)
+    to_display += others.first(few_results ? 2 : 1)
 
 
     render json: to_display.first(10).map { |r| { label: "#{r.real_name} (#{r.masked_zip})", id: r.id } }

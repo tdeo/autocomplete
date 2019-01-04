@@ -30,7 +30,7 @@ class City
   end
 
   def self.big_cities
-    @big_cities ||= @cities.sort_by { |c| -c.params[:pop_2010] }.first(200)
+    @big_cities ||= @cities.sort_by { |c| -c.params[:pop_2010] }.first(50)
   end
 
 
