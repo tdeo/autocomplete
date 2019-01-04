@@ -26,12 +26,12 @@ class ApplicationController < ActionController::Base
       end
     end
 
-    to_display = prefixes + sounds.first(5)
-    to_display += contains.first(to_display.size < 10 ? 10 : 5)
-    to_display += others.first(to_display.size < 10 ? 5 : 2)
+    to_display = prefixes.first(3) + contains.first(3)
+    to_display += sounds.first(to_display.size < 5 ? 5 : 3)
+    to_display += others.first(to_display.size < 5 ? 5 : 2)
 
 
-    render json: to_display.first(25).map { |r| { label: "#{r.real_name} (#{r.masked_zip})", id: r.id } }
+    render json: to_display.first(10).map { |r| { label: "#{r.real_name} (#{r.masked_zip})", id: r.id } }
   end
 
   def city
