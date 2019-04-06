@@ -3,7 +3,7 @@ class ApplicationController < ActionController::Base
     query = Utils.ascii(params[:term])
     soundex = Utils.soundex(query)
 
-    results = City.search(query).sort_by! { |r| r.score(query) }
+    results = City.by_soundex(query).sort_by! { |r| r.score(query) }
 
     idx = results.bsearch_index { |r| r.score(query) >= 1000 }
 
@@ -12,7 +12,7 @@ class ApplicationController < ActionController::Base
     sounds = []
     others = []
 
-    results[0...idx].each do |r|
+    results[idx.nil? ? 0..-1 : 0...idx].each do |r|
       ascii_name = Utils.ascii(r.real_name)
 
       if ascii_name.start_with?(query)
@@ -28,10 +28,12 @@ class ApplicationController < ActionController::Base
 
     to_display = prefixes.first(3) + contains.first(3)
 
-    few_results = to_display.size < 3
-    to_display += sounds.first(few_results ? 3 : 2)
-    to_display += others.first(few_results ? 2 : 1)
+    to_display += sounds.first(to_display.size < 3 ? 3 : 2)
+    to_display += others.first(1)
 
+    if (to_display & City.big_cities).empty?
+      to_display.unshift(City.big_cities.min_by { |r| r.score(query) })
+    end
 
     render json: to_display.first(10).map { |r| { label: "#{r.real_name} (#{r.masked_zip})", id: r.id } }
   end
